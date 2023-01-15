@@ -5,7 +5,6 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{Display,Debug};
 use std::fmt::{Result as FmtResult,Formatter};
-use std::string::FromUtf8Error;
 
 pub struct Request {
     path: String,
@@ -39,7 +38,7 @@ impl TryFrom<&[u8]> for Request {
         
         let request = str::from_utf8(buf);
 
-        
+
     }
 }
 
