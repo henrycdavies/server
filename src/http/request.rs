@@ -1,4 +1,4 @@
-use super::method::Method;
+use super::method::{Method, MethodError};
 use std::str;
 use std::str::Utf8Error;
 use std::convert::TryFrom;
@@ -21,25 +21,31 @@ impl Request {
 impl TryFrom<&[u8]> for Request {
     type Error = ParseError;
 
+    // GET /search?name=abc&sort=1 HTTP/1.1\r\n...HEADERS...
     fn try_from(buf: &[u8]) -> Result<Self, Self::Error> {
-        // Different ways to match on result
+        let request = str::from_utf8(buf)?;
 
-        // match str::from_utf8(buf) {
-        //     Ok(request) => {},
-        //     Err(e) => return Err(ParseError::InvalidEncoding)
-        // };
+        let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (protocol, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
 
-        // match str::from_utf8(buf).or(Err(ParseError::InvalidEncoding)) {
-        //     Ok(request) => {},
-        //     Err(e) => return Err(e),
-        // };
+        if protocol != "HTTP/1.1" {
+            return Err(ParseError::InvalidProtocol);
+        }
 
-        // let request = str::from_utf8(buf).or(Err(ParseError::InvalidEncoding))?;
-        
-        let request = str::from_utf8(buf);
-
+        let method: Method = method.parse()?;
 
     }
+}
+
+fn get_next_word(request: &str) -> Option<(&str, &str)> {
+    for (i, c)in request.chars().enumerate() {
+        if c == ' ' || c == '\r' {
+            return Some((&request[..i], &request[i + 1..]));
+        }
+    }
+
+    None
 }
 
 pub enum ParseError {
@@ -69,6 +75,12 @@ impl Display for ParseError {
 impl Debug for ParseError {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "{}", self.message())
+    }
+}
+
+impl From<MethodError> for ParseError {
+    fn from(_: MethodError) -> Self {
+        Self::InvalidMethod
     }
 }
 
