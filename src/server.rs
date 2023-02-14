@@ -1,9 +1,9 @@
-use crate::http::{Response, StatusCode, ParseError};
+use crate::http::{Response, Request, StatusCode, ParseError};
+use crate::thread::ThreadPool;
 use std::net::TcpListener;
 use std::io::{Read, Write};
 use std::convert::TryFrom;
-use std::thread::{self, Thread};
-use crate::http::Request;
+use std::thread;
 
 pub trait Handler {
     fn handle_request(&mut self, request: &Request) -> Response;
@@ -18,20 +18,6 @@ pub struct Server {
     addr: String,
 }
 
-pub struct ThreadPool;
-
-impl ThreadPool {
-    pub fn new(size: usize) -> ThreadPool {
-        ThreadPool
-    }
-
-    pub fn execute<F>(&self, f: F)
-    where
-        F: FnOnce() + Send + 'static,
-    {
-    }
-}
-
 impl Server {
     pub fn new(addr: String) -> Self {
         Server {
@@ -39,7 +25,8 @@ impl Server {
         }
     }
 
-    pub fn run(self, mut handler: impl Handler) {
+    // Handler must implement Send to be able to able to be 
+    pub fn run(self, mut handler: impl Handler + Send + 'static + Copy) {
         println!("Listening on {}", self.addr);
 
         let listener = TcpListener::bind(&self.addr).unwrap();
@@ -49,7 +36,8 @@ impl Server {
         loop {
             match listener.accept() {
                 Ok((mut stream, _)) => {
-                    pool.execute(|| {
+                    thread::spawn(move || {
+                    // pool.execute(move || {
                         let mut buffer = [0; 1024];
                         match stream.read(&mut buffer) {
                             Ok(_) => {
