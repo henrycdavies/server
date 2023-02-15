@@ -36,8 +36,7 @@ impl Server {
         loop {
             match listener.accept() {
                 Ok((mut stream, _)) => {
-                    thread::spawn(move || {
-                    // pool.execute(move || {
+                    pool.execute(move || {
                         let mut buffer = [0; 1024];
                         match stream.read(&mut buffer) {
                             Ok(_) => {
