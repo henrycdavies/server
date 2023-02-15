@@ -60,12 +60,6 @@ impl<'buf> TryFrom<&'buf[u8]> for Request<'buf> {
     }
 }
 
-// impl Request {
-//     fn from_byte_array(buf: &[u8]) -> Result<Self, String> {
-//         unimplemented!()
-//     }
-// }
-
 fn get_next_word(request: &str) -> Option<(&str, &str)> {
     for (i, c)in request.chars().enumerate() {
         if c == ' ' || c == '\r' {

@@ -6,13 +6,14 @@ use std::env;
 
 mod server;
 mod http;
+mod thread;
 mod website_handler;
 
 
 fn main() {
-    let default_path = format!("{}/public", env!("CARGO_MANIFEST_DIR"));
-    let public_path = env::var("PUBLIC_PATH").unwrap_or(default_path);
-    println!("public path: {}",public_path);
-    let server = Server::new("127.0.0.1:8080".to_string());
-    server.run(WebsiteHandler::new(public_path));
+    let default_port = String::from("8080");
+    let port = env::var("RUST_SERVER_PORT").unwrap_or(default_port);
+    let server_address = format!("127.0.0.1:{}", port);
+    let server = Server::new(server_address);
+    server.run(WebsiteHandler::new());
 }

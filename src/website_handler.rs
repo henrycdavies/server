@@ -1,20 +1,25 @@
 use super::http::{Request, Response, StatusCode, Method};
 use super::server::Handler;
-use std::fs;
+use std::time::Duration;
+use std::{env, fs, thread};
+
+// TODO: Rearchitect so that we can have heap-allocated properties on this struct
+#[derive(Clone, Copy)]
 pub struct WebsiteHandler {
-    public_path: String
 }
 
 impl WebsiteHandler {
-    pub fn new(public_path: String) -> Self{
-        Self { public_path }
+    pub fn new() -> Self{
+        Self { }
     }
 
     fn read_file(&self, file_path: &str) -> Option<String> {
-        let path = format!("{}/{}", self.public_path, file_path);
+        let default_path = format!("{}/public", env!("CARGO_MANIFEST_DIR"));
+        let public_path = env::var("RUST_SERVER_PUBLIC_PATH").unwrap_or(default_path);
+        let path = format!("{}/{}", public_path, file_path);
         match fs::canonicalize(path) {
             Ok(path) => {
-                if path.starts_with(&self.public_path) {
+                if path.starts_with(&public_path) {
                     fs::read_to_string(path).ok()
                 } else {
                     println!("Directory traversal attack attempted: {}", file_path);
@@ -31,6 +36,10 @@ impl Handler for WebsiteHandler {
         match request.method() {
             Method::GET => match request.path() {
                 "/" => Response::new(StatusCode::Ok, self.read_file("index.html")),
+                "/sleep" => {
+                    thread::sleep(Duration::from_secs(10));
+                    Response::new(StatusCode::Ok, Some("OK".to_string()))
+                },
                 "/hello" => Response::new(StatusCode::Ok, self.read_file("hello.html")),
                 path => match self.read_file(path) {
                     Some(contents) => Response::new(StatusCode::Ok, Some(contents)),
