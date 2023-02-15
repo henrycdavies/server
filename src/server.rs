@@ -1,7 +1,7 @@
 use crate::http::{Response, Request, StatusCode, ParseError};
 use crate::thread::ThreadPool;
 use std::net::TcpListener;
-use std::io::{Read, Write};
+use std::io::{Read};
 use std::convert::TryFrom;
 use std::thread;
 
