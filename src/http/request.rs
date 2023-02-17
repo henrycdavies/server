@@ -4,13 +4,14 @@ use std::error::Error;
 use std::fmt::{Debug, Display, Result as FmtResult,Formatter};
 use std::str;
 use std::str::Utf8Error;
-use super::QueryString;
+use super::{QueryString, Header};
 
 #[derive(Debug)]
 pub struct Request<'buf> {
     path: &'buf str,
     query_string: Option<QueryString<'buf>>,
     method: Method,
+    headers: Vec<Header<'buf>>,
 }
 
 impl<'buf> Request<'buf> {
@@ -37,6 +38,7 @@ impl<'buf> TryFrom<&'buf[u8]> for Request<'buf> {
         let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (mut path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (protocol, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let headers = extract_headers(request);
         
         if protocol != "HTTP/1.1" {
             return Err(ParseError::InvalidProtocol);
@@ -54,10 +56,22 @@ impl<'buf> TryFrom<&'buf[u8]> for Request<'buf> {
         Ok(Self {
             path,
             query_string,
-            method
+            method,
+            headers
         })
         
     }
+}
+
+fn extract_headers(request: &str) -> Vec<Header> {
+    let mut headers: Vec<Header> = Vec::new();
+    let split_by_newline = request.split('\r');
+    for sp in split_by_newline {        
+        if sp.contains(":") {
+            headers.push(Header::from(sp))
+        }
+    }
+    headers
 }
 
 fn get_next_word(request: &str) -> Option<(&str, &str)> {

@@ -56,8 +56,6 @@ impl Worker {
             let message = receiver.lock().unwrap().recv();
             match message {
                 Ok(job) => {
-                    println!("Worker {id} received and now executing new job.");
-
                     job()       
                 },
                 Err(_) => {
