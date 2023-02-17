@@ -44,7 +44,7 @@ impl Handler for WebsiteHandler {
                 path => match self.read_file(path) {
                     Some(contents) => Response::new(StatusCode::Ok, Some(contents)),
                     None => Response::new(StatusCode::NotFound, None),
-                }
+                },
             },
             _ => Response::new(StatusCode::NotFound, None),
         }
